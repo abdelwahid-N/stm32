@@ -3148,13 +3148,13 @@ body {
       position: fixed !important;
       bottom: 24px !important;
       left: 50% !important;
-      transform: translateX(-50%) !important;
+      transform: translateX(-50%) translateY(20px) !important;
       background: rgba(6, 19, 14, 0.95) !important;
       border: 1px solid #10b981 !important;
       color: #ffffff !important;
-      padding: 12px 22px !important;
+      padding: 10px 20px !important;
       border-radius: 999px !important;
-      font-size: 0.9rem !important;
+      font-size: 0.88rem !important;
       font-weight: 700 !important;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
       z-index: 20000 !important;
@@ -3163,6 +3163,15 @@ body {
       gap: 10px !important;
       backdrop-filter: blur(8px) !important;
       pointer-events: none !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+      transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s !important;
+    }
+
+    .toast-notification.show {
+      opacity: 1 !important;
+      visibility: visible !important;
+      transform: translateX(-50%) translateY(0) !important;
     }
 
     /* Mobile Click Touch Optimizations */
@@ -3417,7 +3426,7 @@ body {
 <body>
 
   <!-- Toast Notification -->
-  <div class="toast-notification" id="toastNotification" style="display: none;">
+  <div class="toast-notification" id="toastNotification">
     <div class="toast-icon" id="toastIcon">ℹ️</div>
     <div class="toast-message" id="toastMsg"></div>
   </div>
@@ -4126,27 +4135,36 @@ body {
           <h4 style="font-size: 0.95rem; font-weight: 800; margin: 0;">🔄 تحديث التطبيق بملف (Mise à jour par fichier)</h4>
           <span class="btn-update-badge" id="appVersionBadge">النسخة الأصلية v1.0</span>
         </div>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">
-          فـ أي وقت صيفطنا ليك ملف تحديث (مثلاً <code>Ajban_Update.html</code>)، ختار الملف هنا باش يتحدث التطبيق مباشرة فـ التيليفون بلا ما تعاود تثبت الـ APK وبلا ما تضيع حتى درهم من حساباتك!
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+          فـ أي وقت صيفطنا ليك ملف تحديث (مثلاً <code>Ajban_Al_Khair_Update.html</code>)، تقدر تطبق التحديث بهاد الطرق الساهلة بلا ما تضيع حتى درهم:
         </p>
 
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <input type="file" id="updateFileInput" accept=".html,.txt" style="display: none;">
+        <!-- Method 1: File Picker & Clipboard -->
+        <input type="file" id="updateFileInput" accept="*/*" style="display: none;">
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
           <button class="btn btn-primary" id="btnPickUpdateFile" style="flex: 1; min-width: 200px;">
-            <span>📥</span>
-            <span>اختيار ملف التحديث (Fichier .html)</span>
+            <span>📁</span>
+            <span>اختيار ملف التحديث من الهاتف (.html)</span>
           </button>
-          <button class="btn btn-secondary" id="btnResetUpdate" style="display: none;">
-            <span>⏮️</span>
-            <span>الرجوع للنسخة الأصلية</span>
+          <button class="btn btn-secondary" id="btnPasteFromClipboard" style="flex: 1; min-width: 200px;">
+            <span>📋</span>
+            <span>لصق وتطبيق من الحافظة (Presse-papiers)</span>
           </button>
         </div>
 
-        <details style="margin-top: 10px;">
-          <summary style="cursor: pointer; font-size: 0.8rem; color: var(--text-dim);">أو لصق كود التحديث يدوياً</summary>
-          <textarea id="updateCodeTextarea" class="form-textarea" placeholder="ألصق كود التحديث هنا..." style="margin-top: 8px; height: 80px;"></textarea>
-          <button class="btn btn-primary btn-sm" id="btnApplyUpdateCode" style="margin-top: 6px;">تطبيق الكود</button>
-        </details>
+        <button class="btn btn-secondary" id="btnResetUpdate" style="display: none; width: 100%; margin-bottom: 10px;">
+          <span>⏮️</span>
+          <span>الرجوع للنسخة الأصلية المدمجة</span>
+        </button>
+
+        <!-- Method 2: Direct Textarea -->
+        <div style="margin-top: 10px; background: rgba(0,0,0,0.25); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
+          <label style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">أو ألصق كود التحديث هنا (Coller le code) ورك على تطبيق:</label>
+          <textarea id="updateCodeTextarea" class="form-textarea" placeholder="ألصق كود التحديث هنا..." style="height: 70px; font-size: 0.8rem;"></textarea>
+          <button class="btn btn-primary" id="btnApplyUpdateCode" style="margin-top: 8px; width: 100%;">
+            <span>⚡</span> تطبيق الكود وتحديث التطبيق فـ الحين
+          </button>
+        </div>
       </div>
 
       <hr style="border: 0; border-top: 1px solid var(--border-subtle); margin: 16px 0;">
@@ -4321,10 +4339,19 @@ body {
         var m = document.getElementById('toastMsg');
         var ic = document.getElementById('toastIcon');
         ic.textContent = type === 'success' ? '✅' : (type === 'warning' ? '⚠️' : 'ℹ️');
+        if (type === 'success') {
+          t.style.borderColor = '#10b981';
+        } else if (type === 'warning') {
+          t.style.borderColor = '#f59e0b';
+        } else {
+          t.style.borderColor = '#38bdf8';
+        }
         m.textContent = msg;
-        t.style.display = 'flex';
+        t.classList.add('show');
         clearTimeout(t._timer);
-        t._timer = setTimeout(function() { t.style.display = 'none'; }, 3500);
+        t._timer = setTimeout(function() {
+          t.classList.remove('show');
+        }, 2000);
       }
 
       function showConfirm(title, message, icon, onYes) {
@@ -5467,7 +5494,7 @@ body {
         });
 
         fileInput.addEventListener('change', function(e) {
-          var file = e.target.files[0];
+          var file = e.target.files && e.target.files[0];
           if (!file) return;
 
           showToast('جاري قراءة ملف التحديث... ⏳', 'info');
@@ -5475,8 +5502,35 @@ body {
           reader.onload = function(evt) {
             applyHtmlUpdate(evt.target.result);
           };
+          reader.onerror = function() {
+            showToast('تعذر قراءة الملف! جرب النسخ واللصق المباشر', 'warning');
+          };
           reader.readAsText(file);
         });
+
+        var btnPaste = document.getElementById('btnPasteFromClipboard');
+        if (btnPaste) {
+          btnPaste.addEventListener('click', function() {
+            if (navigator.clipboard && navigator.clipboard.readText) {
+              navigator.clipboard.readText().then(function(txt) {
+                if (txt && txt.trim().length > 100) {
+                  showToast('جاري قراءة الكود من الحافظة... ⏳', 'info');
+                  applyHtmlUpdate(txt.trim());
+                } else {
+                  showToast('الحافظة فارغة! انسخ كود التحديث أولاً أو الصقه بالأسفل', 'warning');
+                }
+              }).catch(function() {
+                showToast('المرجو لصق الكود فـ المربع أدناه مباشرة', 'info');
+                var ta = document.getElementById('updateCodeTextarea');
+                if (ta) ta.focus();
+              });
+            } else {
+              showToast('المرجو لصق الكود فـ المربع أدناه مباشرة', 'info');
+              var ta = document.getElementById('updateCodeTextarea');
+              if (ta) ta.focus();
+            }
+          });
+        }
 
         document.getElementById('btnApplyUpdateCode').addEventListener('click', function() {
           var code = document.getElementById('updateCodeTextarea').value.trim();
@@ -5488,7 +5542,9 @@ body {
         });
 
         function applyHtmlUpdate(htmlContent) {
-          if (!htmlContent.includes('<html') || htmlContent.length < 500) {
+          if (!htmlContent) return;
+          var lower = htmlContent.toLowerCase();
+          if ((!lower.includes('<html') && !lower.includes('<!doctype')) || htmlContent.length < 500) {
             showToast('الملف غير صالح أو ليس ملف تحديث صحيح', 'warning');
             return;
           }
